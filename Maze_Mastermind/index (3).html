@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze Matermind - Pathfinding Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        select, input, button {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .canvas-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        #mazeCanvas {
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            cursor: crosshair;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .legend {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .legend h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .benchmark-results {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .benchmark-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .benchmark-item:last-child {
+            border-bottom: none;
+        }
+
+        .algorithm-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .benchmark-metric {
+            font-size: 0.9em;
+            color: #667eea;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧩 Maze Matermind</h1>
+        <p style="text-align: center; margin-bottom: 30px; color: #666; font-size: 1.1em;">
+            Interactive Pathfinding Algorithm Visualizer & Benchmark Suite
+        </p>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="algorithm">Algorithm:</label>
+                <select id="algorithm">
+                    <option value="bfs">Breadth-First Search</option>
+                    <option value="dfs">Depth-First Search</option>
+                    <option value="dijkstra">Dijkstra's Algorithm</option>
+                    <option value="astar">A* Algorithm</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="mazeSize">Maze Size:</label>
+                <select id="mazeSize">
+                    <option value="20">20x20 (400 cells)</option>
+                    <option value="30">30x30 (900 cells)</option>
+                    <option value="50" selected>50x50 (2,500 cells)</option>
+                    <option value="100">100x100 (10,000 cells)</option>
+                    <option value="150">150x150 (22,500 cells)</option>
+                    <option value="200">200x200 (40,000 cells)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="speed">Speed:</label>
+                <select id="speed">
+                    <option value="1">Fast</option>
+                    <option value="10" selected>Medium</option>
+                    <option value="50">Slow</option>
+                </select>
+            </div>
+
+            <button id="generateMaze">Generate Maze</button>
+            <button id="visualize">Visualize</button>
+            <button id="stop" disabled>Stop</button>
+            <button id="benchmark">Benchmark All</button>
+            <button id="clearPath">Clear Path</button>
+        </div>
+
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="mazeCanvas"></canvas>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <div>Processing...</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="stats">
+                    <h3>Current Algorithm Stats</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Algorithm:</span>
+                        <span class="stat-value" id="currentAlgorithm">BFS</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Nodes Explored:</span>
+                        <span class="stat-value" id="nodesExplored">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Path Length:</span>
+                        <span class="stat-value" id="pathLength">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Execution Time:</span>
+                        <span class="stat-value" id="executionTime">0ms</span>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <h3>Legend</h3>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2ecc71;"></div>
+                        <span>Start Point</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e74c3c;"></div>
+                        <span>End Point</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #34495e;"></div>
+                        <span>Wall</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db;"></div>
+                        <span>Explored</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f39c12;"></div>
+                        <span>Path</span>
+                    </div>
+                </div>
+
+                <div class="benchmark-results" id="benchmarkResults" style="display: none;">
+                    <h3>Benchmark Results</h3>
+                    <div id="benchmarkData"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MazeMatermind {
+            constructor() {
+                this.canvas = document.getElementById('mazeCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.maze = [];
+                this.size = 50;
+                this.cellSize = 12;
+                this.start = { x: 1, y: 1 };
+                this.end = { x: 48, y: 48 };
+                this.isRunning = false;
+                this.shouldStop = false;
+                this.benchmarkResults = {};
+                
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.generateMaze();
+            }
+
+            setupCanvas() {
+                this.canvas.width = this.size * this.cellSize;
+                this.canvas.height = this.size * this.cellSize;
+            }
+
+            setupEventListeners() {
+                document.getElementById('generateMaze').addEventListener('click', () => this.generateMaze());
+                document.getElementById('visualize').addEventListener('click', () => this.visualize());
+                document.getElementById('stop').addEventListener('click', () => this.stopExecution());
+                document.getElementById('benchmark').addEventListener('click', () => this.runBenchmark());
+                document.getElementById('clearPath').addEventListener('click', () => this.clearPath());
+                document.getElementById('mazeSize').addEventListener('change', (e) => this.changeMazeSize(e.target.value));
+                document.getElementById('algorithm').addEventListener('change', (e) => this.updateCurrentAlgorithm(e.target.value));
+                
+                this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+            }
+
+            changeMazeSize(newSize) {
+                this.size = parseInt(newSize);
+                this.cellSize = Math.min(600 / this.size, 20);
+                this.setupCanvas();
+                this.end = { x: this.size - 2, y: this.size - 2 };
+                this.generateMaze();
+            }
+
+            updateCurrentAlgorithm(algorithm) {
+                const algorithmNames = {
+                    'bfs': 'Breadth-First Search',
+                    'dfs': 'Depth-First Search',
+                    'dijkstra': 'Dijkstra\'s Algorithm',
+                    'astar': 'A* Algorithm'
+                };
+                document.getElementById('currentAlgorithm').textContent = algorithmNames[algorithm];
+            }
+
+            generateMaze() {
+                this.maze = Array(this.size).fill().map(() => Array(this.size).fill(1));
+                
+                // Create paths using recursive backtracking
+                const stack = [];
+                const visited = Array(this.size).fill().map(() => Array(this.size).fill(false));
+                
+                const directions = [[0, 2], [2, 0], [0, -2], [-2, 0]];
+                
+                const isValid = (x, y) => x >= 0 && x < this.size && y >= 0 && y < this.size;
+                
+                const current = { x: 1, y: 1 };
+                this.maze[current.y][current.x] = 0;
+                visited[current.y][current.x] = true;
+                stack.push(current);
+                
+                while (stack.length > 0) {
+                    const curr = stack[stack.length - 1];
+                    const neighbors = [];
+                    
+                    for (const [dx, dy] of directions) {
+                        const nx = curr.x + dx;
+                        const ny = curr.y + dy;
+                        
+                        if (isValid(nx, ny) && !visited[ny][nx]) {
+                            neighbors.push({ x: nx, y: ny });
+                        }
+                    }
+                    
+                    if (neighbors.length > 0) {
+                        const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                        
+                        // Remove wall between current and next
+                        const wallX = curr.x + (next.x - curr.x) / 2;
+                        const wallY = curr.y + (next.y - curr.y) / 2;
+                        this.maze[wallY][wallX] = 0;
+                        this.maze[next.y][next.x] = 0;
+                        
+                        visited[next.y][next.x] = true;
+                        stack.push(next);
+                    } else {
+                        stack.pop();
+                    }
+                }
+                
+                this.drawMaze();
+            }
+
+            drawMaze() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                for (let y = 0; y < this.size; y++) {
+                    for (let x = 0; x < this.size; x++) {
+                        const color = this.maze[y][x] === 1 ? '#34495e' : '#ecf0f1';
+                        this.ctx.fillStyle = color;
+                        this.ctx.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
+                    }
+                }
+                
+                // Draw start and end
+                this.ctx.fillStyle = '#2ecc71';
+                this.ctx.fillRect(this.start.x * this.cellSize, this.start.y * this.cellSize, this.cellSize, this.cellSize);
+                
+                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.fillRect(this.end.x * this.cellSize, this.end.y * this.cellSize, this.cellSize, this.cellSize);
+            }
+
+            handleCanvasClick(event) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = Math.floor((event.clientX - rect.left) / this.cellSize);
+                const y = Math.floor((event.clientY - rect.top) / this.cellSize);
+                
+                if (x >= 0 && x < this.size && y >= 0 && y < this.size && this.maze[y][x] === 0) {
+                    if (event.ctrlKey) {
+                        this.end = { x, y };
+                    } else {
+                        this.start = { x, y };
+                    }
+                    this.drawMaze();
+                }
+            }
+
+            async visualize() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                this.shouldStop = false;
+                this.clearPath();
+                
+                // Update button states
+                document.getElementById('visualize').disabled = true;
+                document.getElementById('stop').disabled = false;
+                document.getElementById('benchmark').disabled = true;
+                
+                const algorithm = document.getElementById('algorithm').value;
+                const speed = parseInt(document.getElementById('speed').value);
+                
+                const startTime = performance.now();
+                let result;
+                
+                try {
+                    switch (algorithm) {
+                        case 'bfs':
+                            result = await this.bfs(speed);
+                            break;
+                        case 'dfs':
+                            result = await this.dfs(speed);
+                            break;
+                        case 'dijkstra':
+                            result = await this.dijkstra(speed);
+                            break;
+                        case 'astar':
+                            result = await this.astar(speed);
+                            break;
+                    }
+                    
+                    const endTime = performance.now();
+                    const executionTime = endTime - startTime;
+                    
+                    if (!this.shouldStop) {
+                        this.updateStats(result.explored, result.path.length, executionTime);
+                        
+                        if (result.path.length > 0) {
+                            await this.drawPath(result.path, speed);
+                        }
+                    }
+                } catch (error) {
+                    console.log('Algorithm stopped by user');
+                } finally {
+                    this.isRunning = false;
+                    this.shouldStop = false;
+                    
+                    // Reset button states
+                    document.getElementById('visualize').disabled = false;
+                    document.getElementById('stop').disabled = true;
+                    document.getElementById('benchmark').disabled = false;
+                }
+            }
+
+            stopExecution() {
+                this.shouldStop = true;
+                console.log('Stopping algorithm execution...');
+            }
+
+            async bfs(speed) {
+                const queue = [{ ...this.start, path: [this.start] }];
+                const visited = new Set();
+                const explored = [];
+                
+                while (queue.length > 0 && !this.shouldStop) {
+                    const current = queue.shift();
+                    const key = `${current.x},${current.y}`;
+                    
+                    if (visited.has(key)) continue;
+                    visited.add(key);
+                    explored.push({ x: current.x, y: current.y });
+                    
+                    if (current.x === this.end.x && current.y === this.end.y) {
+                        return { path: current.path, explored: explored.length };
+                    }
+                    
+                    this.ctx.fillStyle = '#3498db';
+                    this.ctx.fillRect(current.x * this.cellSize, current.y * this.cellSize, this.cellSize, this.cellSize);
+                    
+                    const neighbors = this.getNeighbors(current.x, current.y);
+                    for (const neighbor of neighbors) {
+                        const neighborKey = `${neighbor.x},${neighbor.y}`;
+                        if (!visited.has(neighborKey)) {
+                            queue.push({
+                                x: neighbor.x,
+                                y: neighbor.y,
+                                path: [...current.path, neighbor]
+                            });
+                        }
+                    }
+                    
+                    if (speed > 1) {
+                        await new Promise(resolve => setTimeout(resolve, speed));
+                    }
+                }
+                
+                return { path: [], explored: explored.length };
+            }
+
+            async dfs(speed) {
+                const stack = [{ ...this.start, path: [this.start] }];
+                const visited = new Set();
+                const explored = [];
+                
+                while (stack.length > 0 && !this.shouldStop) {
+                    const current = stack.pop();
+                    const key = `${current.x},${current.y}`;
+                    
+                    if (visited.has(key)) continue;
+                    visited.add(key);
+                    explored.push({ x: current.x, y: current.y });
+                    
+                    if (current.x === this.end.x && current.y === this.end.y) {
+                        return { path: current.path, explored: explored.length };
+                    }
+                    
+                    this.ctx.fillStyle = '#3498db';
+                    this.ctx.fillRect(current.x * this.cellSize, current.y * this.cellSize, this.cellSize, this.cellSize);
+                    
+                    const neighbors = this.getNeighbors(current.x, current.y);
+                    for (const neighbor of neighbors.reverse()) {
+                        const neighborKey = `${neighbor.x},${neighbor.y}`;
+                        if (!visited.has(neighborKey)) {
+                            stack.push({
+                                x: neighbor.x,
+                                y: neighbor.y,
+                                path: [...current.path, neighbor]
+                            });
+                        }
+                    }
+                    
+                    if (speed > 1) {
+                        await new Promise(resolve => setTimeout(resolve, speed));
+                    }
+                }
+                
+                return { path: [], explored: explored.length };
+            }
+
+            async dijkstra(speed) {
+                const distances = {};
+                const previous = {};
+                const unvisited = new Set();
+                const explored = [];
+                
+                // Initialize distances
+                for (let y = 0; y < this.size; y++) {
+                    for (let x = 0; x < this.size; x++) {
+                        if (this.maze[y][x] === 0) {
+                            const key = `${x},${y}`;
+                            distances[key] = Infinity;
+                            unvisited.add(key);
+                        }
+                    }
+                }
+                
+                const startKey = `${this.start.x},${this.start.y}`;
+                distances[startKey] = 0;
+                
+                while (unvisited.size > 0 && !this.shouldStop) {
+                    // Find unvisited node with minimum distance
+                    let current = null;
+                    let minDistance = Infinity;
+                    
+                    for (const node of unvisited) {
+                        if (distances[node] < minDistance) {
+                            minDistance = distances[node];
+                            current = node;
+                        }
+                    }
+                    
+                    if (current === null) break;
+                    
+                    unvisited.delete(current);
+                    const [x, y] = current.split(',').map(Number);
+                    explored.push({ x, y });
+                    
+                    if (x === this.end.x && y === this.end.y) {
+                        // Reconstruct path
+                        const path = [];
+                        let curr = current;
+                        while (curr) {
+                            const [px, py] = curr.split(',').map(Number);
+                            path.unshift({ x: px, y: py });
+                            curr = previous[curr];
+                        }
+                        return { path, explored: explored.length };
+                    }
+                    
+                    this.ctx.fillStyle = '#3498db';
+                    this.ctx.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
+                    
+                    const neighbors = this.getNeighbors(x, y);
+                    for (const neighbor of neighbors) {
+                        const neighborKey = `${neighbor.x},${neighbor.y}`;
+                        if (unvisited.has(neighborKey)) {
+                            const alt = distances[current] + 1;
+                            if (alt < distances[neighborKey]) {
+                                distances[neighborKey] = alt;
+                                previous[neighborKey] = current;
+                            }
+                        }
+                    }
+                    
+                    if (speed > 1) {
+                        await new Promise(resolve => setTimeout(resolve, speed));
+                    }
+                }
+                
+                return { path: [], explored: explored.length };
+            }
+
+            async astar(speed) {
+                const openSet = [{ ...this.start, g: 0, h: this.heuristic(this.start, this.end), f: this.heuristic(this.start, this.end) }];
+                const closedSet = new Set();
+                const cameFrom = {};
+                const gScore = {};
+                const explored = [];
+                
+                const startKey = `${this.start.x},${this.start.y}`;
+                gScore[startKey] = 0;
+                
+                while (openSet.length > 0 && !this.shouldStop) {
+                    // Find node with lowest f score
+                    openSet.sort((a, b) => a.f - b.f);
+                    const current = openSet.shift();
+                    
+                    const currentKey = `${current.x},${current.y}`;
+                    closedSet.add(currentKey);
+                    explored.push({ x: current.x, y: current.y });
+                    
+                    if (current.x === this.end.x && current.y === this.end.y) {
+                        // Reconstruct path
+                        const path = [];
+                        let curr = currentKey;
+                        while (curr) {
+                            const [x, y] = curr.split(',').map(Number);
+                            path.unshift({ x, y });
+                            curr = cameFrom[curr];
+                        }
+                        return { path, explored: explored.length };
+                    }
+                    
+                    this.ctx.fillStyle = '#3498db';
+                    this.ctx.fillRect(current.x * this.cellSize, current.y * this.cellSize, this.cellSize, this.cellSize);
+                    
+                    const neighbors = this.getNeighbors(current.x, current.y);
+                    for (const neighbor of neighbors) {
+                        const neighborKey = `${neighbor.x},${neighbor.y}`;
+                        
+                        if (closedSet.has(neighborKey)) continue;
+                        
+                        const tentativeG = gScore[currentKey] + 1;
+                        
+                        if (!(neighborKey in gScore) || tentativeG < gScore[neighborKey]) {
+                            cameFrom[neighborKey] = currentKey;
+                            gScore[neighborKey] = tentativeG;
+                            const h = this.heuristic(neighbor, this.end);
+                            const f = tentativeG + h;
+                            
+                            if (!openSet.some(node => node.x === neighbor.x && node.y === neighbor.y)) {
+                                openSet.push({ ...neighbor, g: tentativeG, h, f });
+                            }
+                        }
+                    }
+                    
+                    if (speed > 1) {
+                        await new Promise(resolve => setTimeout(resolve, speed));
+                    }
+                }
+                
+                return { path: [], explored: explored.length };
+            }
+
+            heuristic(a, b) {
+                return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+            }
+
+            getNeighbors(x, y) {
+                const neighbors = [];
+                const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
+                
+                for (const [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    
+                    if (nx >= 0 && nx < this.size && ny >= 0 && ny < this.size && this.maze[ny][nx] === 0) {
+                        neighbors.push({ x: nx, y: ny });
+                    }
+                }
+                
+                return neighbors;
+            }
+
+            async drawPath(path, speed) {
+                for (let i = 0; i < path.length; i++) {
+                    const point = path[i];
+                    this.ctx.fillStyle = '#f39c12';
+                    this.ctx.fillRect(point.x * this.cellSize, point.y * this.cellSize, this.cellSize, this.cellSize);
+                    
+                    if (speed > 1) {
+                        await new Promise(resolve => setTimeout(resolve, speed / 2));
+                    }
+                }
+                
+                // Redraw start and end
+                this.ctx.fillStyle = '#2ecc71';
+                this.ctx.fillRect(this.start.x * this.cellSize, this.start.y * this.cellSize, this.cellSize, this.cellSize);
+                
+                this.ctx.fillStyle = '#e74c3c';
+                this.ctx.fillRect(this.end.x * this.cellSize, this.end.y * this.cellSize, this.cellSize, this.cellSize);
+            }
+
+            updateStats(explored, pathLength, executionTime) {
+                document.getElementById('nodesExplored').textContent = explored;
+                document.getElementById('pathLength').textContent = pathLength;
+                document.getElementById('executionTime').textContent = `${executionTime.toFixed(2)}ms`;
+            }
+
+            clearPath() {
+                this.drawMaze();
+            }
+
+            async runBenchmark() {
+                if (this.isRunning) return;
+                
+                this.isRunning = true;
+                document.getElementById('loading').style.display = 'block';
+                
+                const algorithms = ['bfs', 'dfs', 'dijkstra', 'astar'];
+                const results = {};
+                
+                for (let i = 0; i < algorithms.length; i++) {
+                    const algorithm = algorithms[i];
+                    this.clearPath();
+                    
+                    const startTime = performance.now();
+                    let result;
+                    
+                    switch (algorithm) {
+                        case 'bfs':
+                            result = await this.bfs(1);
+                            break;
+                        case 'dfs':
+                            result = await this.dfs(1);
+                            break;
+                        case 'dijkstra':
+                            result = await this.dijkstra(1);
+                            break;
+                        case 'astar':
+                            result = await this.astar(1);
+                            break;
+                    }
+                    
+                    const endTime = performance.now();
+                    const executionTime = endTime - startTime;
+                    
+                    results[algorithm] = {
+                        explored: result.explored,
+                        pathLength: result.path.length,
+                        executionTime: executionTime
+                    };
+                    
+                    // Update progress
+                    const progress = ((i + 1) / algorithms.length) * 100;
+                    document.getElementById('progressFill').style.width = `${progress}%`;
+                    
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                this.displayBenchmarkResults(results);
+                document.getElementById('loading').style.display = 'none';
+                this.isRunning = false;
+            }
+
+            displayBenchmarkResults(results) {
+                const benchmarkDiv = document.getElementById('benchmarkResults');
+                const dataDiv = document.getElementById('benchmarkData');
+                
+                const algorithmNames = {
+                    'bfs': 'BFS',
+                    'dfs': 'DFS',
+                    'dijkstra': 'Dijkstra',
+                    'astar': 'A*'
+                };
+                
+                let html = '';
+                for (const [algorithm, data] of Object.entries(results)) {
+                    html += `
+                        <div class="benchmark-item">
+                            <div class="algorithm-name">${algorithmNames[algorithm]}</div>
+                            <div>
+                                <div class="benchmark-metric">Explored: ${data.explored}</div>
+                                <div class="benchmark-metric">Path: ${data.pathLength}</div>
+                                <div class="benchmark-metric">Time: ${data.executionTime.toFixed(2)}ms</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                dataDiv.innerHTML = html;
+                benchmarkDiv.style.display = 'block';
+                
+                // Find fastest algorithm
+                const fastest = Object.entries(results).reduce((min, [alg, data]) => 
+                    data.executionTime < min.time ? { algorithm: alg, time: data.executionTime } : min,
+                    { algorithm: '', time: Infinity }
+                );
+                
+                if (fastest.algorithm) {
+                    const improvement = ((results.dijkstra?.executionTime || 0) - results.astar?.executionTime || 0) / (results.dijkstra?.executionTime || 1) * 100;
+                    if (improvement > 0) {
+                        console.log(`A* is ${improvement.toFixed(1)}% faster than Dijkstra`);
+                    }
+                }
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            new MazeMatermind();
+        });
+    </script>
+</body>
+</html>
